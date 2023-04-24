@@ -2,8 +2,8 @@
 
 namespace Contenir\Asset;
 
-use Contenir\Asset\AssetEntity;
-use Contenir\Asset\AssetRepository;
+use Contenir\Asset\Model\Entity\BaseAssetEntity;
+use Contenir\Asset\Model\Repository\BaseAssetRepository;
 use RuntimeException;
 
 /**
@@ -13,8 +13,8 @@ use RuntimeException;
  */
 class AssetManager implements AssetManagerInterface
 {
-    public const DOCUMENT_TYPE_IMAGE     = 'image';
-    public const DOCUMENT_TYPE_DOCUMENT  = 'document';
+    public const DOCUMENT_TYPE_IMAGE    = 'image';
+    public const DOCUMENT_TYPE_DOCUMENT = 'document';
 
     /**
      * User Repository
@@ -26,9 +26,9 @@ class AssetManager implements AssetManagerInterface
      * Constructs the service.
      */
     public function __construct(
-        AssetRepository $assetRepository
+        BaseAssetRepository $assetRepository
     ) {
-        $this->assetRepository  = $assetRepository;
+        $this->assetRepository = $assetRepository;
     }
 
     public function findOneById($assetId)
@@ -49,7 +49,7 @@ class AssetManager implements AssetManagerInterface
         ResourceInterface $targetEntity,
         $type = self::DOCUMENT_TYPE_IMAGE
     ) {
-        $folderName             = 'asset';
+        $folderName = 'asset';
         if ($targetEntity) {
             $folderName = sprintf(
                 '%s-%s',
@@ -58,14 +58,14 @@ class AssetManager implements AssetManagerInterface
             );
         }
 
-        $assetPath              = sprintf(
+        $assetPath = sprintf(
             '/asset/user/%s/%s',
             $folderName,
             $type
         );
 
         if (! file_exists('./public' . $assetPath)) {
-            $result             = mkdir('./public' . $assetPath, 0777, true);
+            $result = mkdir('./public' . $assetPath, 0777, true);
             if (! $result) {
                 throw new RuntimeException(sprintf(
                     'Cannot write to target path %s',
@@ -98,7 +98,7 @@ class AssetManager implements AssetManagerInterface
         AbstractEntity $parentEntity = null,
         $type = AssetManager::DOCUMENT_TYPE_IMAGE
     ) {
-        $asset                  = $this->assetRepository->create();
+        $asset = $this->assetRepository->create();
         $asset->populate([
             'type' => $type
         ]);
@@ -110,7 +110,7 @@ class AssetManager implements AssetManagerInterface
         }
 
         if ($userEntity) {
-            $asset->user_id     = $userEntity->user_id;
+            $asset->user_id = $userEntity->user_id;
         }
 
         if ($parentEntity) {
@@ -125,7 +125,7 @@ class AssetManager implements AssetManagerInterface
     }
 
     public function updateAsset(
-        AssetEntity $asset,
+        BaseAssetEntity $asset,
         UserEntity $user = null,
         array $values = [],
         array $data = []
@@ -140,19 +140,19 @@ class AssetManager implements AssetManagerInterface
         $this->getLogger()->notice(sprintf(
             'Updated artwork data'
         ), [
-            'user_id' => $user->user_id ?? null,
+            'user_id'  => $user->user_id ?? null,
             'entry_id' => $asset->entry_id ?? null
         ]);
     }
 
-    public function saveAsset(AssetEntity $asset)
+    public function saveAsset(BaseAssetEntity $asset)
     {
         $this->commitTransaction(function () use ($asset) {
             $this->assetRepository->save($asset);
         });
     }
 
-    public function deleteAsset(AssetEntity $asset)
+    public function deleteAsset(BaseAssetEntity $asset)
     {
         $this->commitTransaction(function () use ($asset) {
             $this->assetRepository->delete([
@@ -162,44 +162,44 @@ class AssetManager implements AssetManagerInterface
     }
 
     public function storeAsset(
-        AssetEntity $asset,
+        BaseAssetEntity $asset,
         ResourceInterface $targetEntity,
         $type,
         $srcPath,
         $constraints = null
     ) {
         if (is_array($srcPath)) {
-            $srcFilename        = $srcPath['name'];
-            $srcPath            = $srcPath['tmp_name'];
+            $srcFilename = $srcPath['name'];
+            $srcPath     = $srcPath['tmp_name'];
         } else {
-            $srcFilename        = basename($srcPath);
+            $srcFilename = basename($srcPath);
         }
 
-        $srcPathParts           = pathinfo($srcFilename);
+        $srcPathParts = pathinfo($srcFilename);
 
-        $filePath               = $this->getAssetPath($targetEntity, $type);
-        $fileName               = $this->getSafeFilename($srcPathParts['filename']);
+        $filePath = $this->getAssetPath($targetEntity, $type);
+        $fileName = $this->getSafeFilename($srcPathParts['filename']);
 
-        $ext                    = $srcPathParts['extension'] ?? null;
+        $ext = $srcPathParts['extension'] ?? null;
 
         if (! $asset->title) {
-            $asset->title       = $this->getSafeFilename($srcFilename);
+            $asset->title = $this->getSafeFilename($srcFilename);
         }
-        $asset->path            = sprintf('%s/%s.%s', $filePath, $fileName, $ext);
-        $asset->mime_type       = mime_content_type($srcPath);
-        $asset->active          = 'active';
+        $asset->path      = sprintf('%s/%s.%s', $filePath, $fileName, $ext);
+        $asset->mime_type = mime_content_type($srcPath);
+        $asset->active    = 'active';
 
-        $result                 = @copy($srcPath, './public' . $asset->path);
+        $result = @copy($srcPath, './public' . $asset->path);
         if ($result === false) {
-            $errorInfo          = error_get_last();
+            $errorInfo = error_get_last();
             throw new RuntimeException(sprintf('Cannot copy file - %s', $errorInfo['message']));
         }
 
         $convertExec = "convert";
 
         if ($convertExec) {
-            $asset->image_lg    = sprintf('%s/%s-lg.%s', $filePath, $fileName, 'jpg');
-            $asset->thumbnail   = sprintf('%s/%s-sm.%s', $filePath, $fileName, 'jpg');
+            $asset->image_lg  = sprintf('%s/%s-lg.%s', $filePath, $fileName, 'jpg');
+            $asset->thumbnail = sprintf('%s/%s-sm.%s', $filePath, $fileName, 'jpg');
 
             if (! file_exists('./public' . $filePath)) {
                 $result = mkdir('./public' . $filePath, 0777, true);
@@ -233,7 +233,7 @@ class AssetManager implements AssetManagerInterface
     }
 
     public function removeAsset(
-        AssetEntity $asset,
+        BaseAssetEntity $asset,
         UserEntity $user = null
     ) {
         if ($asset->path) {
@@ -252,7 +252,7 @@ class AssetManager implements AssetManagerInterface
             'Removed artwork from %s',
             $asset->path
         ), [
-            'user_id' => $user->user_id ?? null,
+            'user_id'  => $user->user_id ?? null,
             'entry_id' => $asset->entry_id ?? null
         ]);
     }
