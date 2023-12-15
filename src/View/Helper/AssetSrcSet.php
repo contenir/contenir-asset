@@ -21,8 +21,16 @@ class AssetSrcset extends AbstractHelper
             return null;
         }
 
+        if (is_string($options)) {
+            $options = ['sizes' => $options];
+        }
+
         $srcset = [];
         $sizes  = $options['sizes'] ?? [];
+
+        if (is_string($sizes)) {
+            $sizes = $this->config['sizes'][$sizes] ?? [];
+        }
 
         foreach ($this->generateSrc($filepath, $sizes) as $size => $destFile) {
             $srcset[] = sprintf('%s %sw', $this->encodeUrl($destFile), $size);
