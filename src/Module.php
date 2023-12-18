@@ -3,6 +3,7 @@
 namespace Contenir\Asset;
 
 use Contenir\Db\Model\Repository\Factory\RepositoryFactory;
+use Laminas\Router\Http\Regex;
 use Laminas\ServiceManager\Factory\InvokableFactory;
 
 class Module
@@ -21,26 +22,27 @@ class Module
                     'asset' => Model\Repository\BaseAssetRepository::class,
                 ],
                 'srcset' => [
-                    'sizes' => [
-                        'small' => [
-                            640  => 320,
-                            960  => 480,
-                            1440 => 720
-                        ],
-                        'medium' => [
-                            640  => 480,
-                            960  => 720,
-                            1440 => 1080,
-                            2400 => 1800
-                        ],
-                        'large' => [
-                            640  => 640,
-                            960  => 960,
-                            1440 => 1440,
-                            2400 => 2400
-                        ]
-                    ],
                     'helper' => '/usr/local/bin/convert'
+                ]
+            ],
+            'router' => [
+                'routes' => [
+                    'imageresize' => [
+                        'type'    => Regex::class,
+                        'options' => [
+                            'regex'    => '/asset/(?<folder>[a-zA-Z0-9_\-\/]+).*/\.(?<dimensions>[\d\.]+x[\d\.]*)/(?<filename>.*)',
+                            'defaults' => [
+                                'controller' => Controller\ImageResizeController::class,
+                                'action'     => 'index'
+                            ],
+                            'spec' => '/asset/%folder%/.%dimensions%/%filename%',
+                        ],
+                    ],
+                ]
+            ],
+            'controllers' => [
+                'factories' => [
+                    Controller\ImageResizeController::class => InvokableFactory::class,
                 ]
             ],
             'service_manager' => [
@@ -56,7 +58,11 @@ class Module
                     'Asset'        => View\Helper\Asset::class,
                     'assetContent' => View\Helper\AssetContent::class,
                     'AssetContent' => View\Helper\AssetContent::class,
+                    'assetSizes'   => View\Helper\AssetSizes::class,
+                    'AssetSizes'   => View\Helper\AssetSizes::class,
+                    'assetSrcset'  => View\Helper\AssetSrcSet::class,
                     'assetSrcSet'  => View\Helper\AssetSrcSet::class,
+                    'AssetSrcset'  => View\Helper\AssetSrcSet::class,
                     'AssetSrcSet'  => View\Helper\AssetSrcSet::class,
                     'assetUrl'     => View\Helper\AssetUrl::class,
                     'AssetUrl'     => View\Helper\AssetUrl::class
@@ -64,10 +70,19 @@ class Module
                 'factories' => [
                     View\Helper\Asset::class        => View\Helper\AssetFactory::class,
                     View\Helper\AssetContent::class => InvokableFactory::class,
+                    View\Helper\AssetSizes::class   => View\Helper\AssetSizesFactory::class,
                     View\Helper\AssetSrcSet::class  => View\Helper\AssetSrcSetFactory::class,
                     View\Helper\AssetUrl::class     => View\Helper\AssetUrlFactory::class,
                 ],
             ],
+            'view_helper_config' => [
+                'assetsrcset' => [
+                    'sizes' => [],
+                ],
+                'assetsizes' => [
+                    'sizes' => [],
+                ],
+            ]
         ];
 
         return $config;

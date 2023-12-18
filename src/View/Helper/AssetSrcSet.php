@@ -2,47 +2,65 @@
 
 namespace Contenir\Asset\View\Helper;
 
-use Laminas\View\Helper\AbstractHelper;
+use Laminas\View\Helper\AbstractHtmlElement;
 
-class AssetSrcset extends AbstractHelper
+class AssetSrcSet extends AbstractHtmlElement
 {
-    protected $config;
     protected $rootPath;
+    protected $sizes = [];
 
-    public function __construct($config)
+    public function __construct()
     {
-        $this->config   = $config;
-        $this->rootPath = realpath('./public/');
+        $this->setRootPath(realpath('./public/'));
     }
 
-    public function __invoke($filepath = null, $options = null)
+    public function getSizes()
     {
-        if (! file_exists($this->rootPath . $filepath)) {
-            return null;
-        }
+        return $this->sizes;
+    }
 
-        if (is_string($options)) {
-            $options = ['sizes' => $options];
-        }
+    public function setSizes(array $sizes = [])
+    {
+        $this->sizes = $sizes;
+    }
 
+    public function getRootPath()
+    {
+        return $this->rootPath;
+    }
+
+    public function setRootPath($rootPath)
+    {
+        $this->rootPath = $rootPath;
+    }
+
+    public function __invoke(
+        $filepath = null,
+        $options = null
+    ) {
         $srcset = [];
-        $sizes  = $options['sizes'] ?? [];
+        $sizes  = $options['sizes'] ?? $options;
+
+        if (! file_exists($this->rootPath . $filepath)) {
+            return $filepath;
+        }
 
         if (is_string($sizes)) {
-            $sizes = $this->config['sizes'][$sizes] ?? [];
+            $sizes = $this->sizes[$sizes] ?? [];
+        } elseif (is_array($sizes)) {
+            $sizes = $options['sizes'] ?? [];
         }
 
         foreach ($this->generateSrc($filepath, $sizes) as $size => $destFile) {
-            $srcset[] = sprintf('%s %sw', $this->encodeUrl($destFile), $size);
+            $srcset[] = sprintf('%s %sw', $destFile, $size);
         }
 
-        return join(',', $srcset);
+        return $this->getView()->escapeHtmlAttr(join(', ', $srcset));
     }
 
     protected function generateSrc($filepath, $sizes)
     {
-        $parts   = @pathinfo($filepath);
-        $srcTime = @filemtime($this->rootPath . $filepath);
+        $parts = @pathinfo($filepath);
 
         if (!$parts['filename']) {
             return false;
@@ -60,22 +78,7 @@ class AssetSrcset extends AbstractHelper
                 $parts['extension']
             );
 
-            $destPath = $this->rootPath . sprintf(
-                '%s/.%s',
-                $parts['dirname'],
-                $resizeDimensions
-            );
-
             yield $size => $destFile;
         }
-    }
-
-    protected function encodeUrl($filepath)
-    {
-        return str_replace(
-            [' '],
-            ['%20'],
-            $filepath
-        );
     }
 }
