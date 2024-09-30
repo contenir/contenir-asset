@@ -30,7 +30,7 @@ class Module
                     'imageresize' => [
                         'type'    => Regex::class,
                         'options' => [
-                            'regex'    => '/asset/(?<folder>[a-zA-Z0-9_\-\/]+).*/\.(?<dimensions>[\d\.]+x[\d\.]*)/(?<filename>.*)',
+                            'regex'    => '/asset/(?<folder>[a-zA-Z0-9_\-\/\%\.]+).*/\.(?<dimensions>[\d\.]+x[\d\.]*)/(?<filename>.*)',
                             'defaults' => [
                                 'controller' => Controller\ImageResizeController::class,
                                 'action'     => 'index'

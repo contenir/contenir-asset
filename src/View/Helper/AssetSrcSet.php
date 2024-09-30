@@ -72,9 +72,9 @@ class AssetSrcSet extends AbstractHtmlElement
 
             $destFile = sprintf(
                 "%s/.%s/%s.%s",
-                $parts['dirname'],
+                implode('/', array_map('urlencode', explode('/', $parts['dirname']))),
                 $resizeDimensions,
-                $parts['filename'],
+                implode('/', array_map('urlencode', explode('/', $parts['filename']))),
                 $parts['extension']
             );
 
