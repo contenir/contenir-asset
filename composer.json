@@ -1,0 +1,54 @@
+{
+    "name": "contenir/asset",
+    "description": "Contenir Asset component - Responsive image generation and management for Mezzio",
+    "type": "library",
+    "license": "BSD-3-Clause",
+    "keywords": ["contenir", "asset", "responsive", "images", "mezzio"],
+    "homepage": "https://docs.contenir.com.au",
+    "support": {
+        "docs": "https://docs.contenir.com.au",
+        "source": "https://github.com/contenir/contenir-asset",
+        "issues": "https://github.com/contenir/contenir-asset/issues"
+    },
+    "require": {
+        "php": "^8.1 || ^8.2 || ^8.3 || ^8.4",
+        "laminas/laminas-diactoros": "^3.0",
+        "laminas/laminas-view": "^2.0",
+        "psr/container": "^2.0",
+        "psr/http-message": "^2.0",
+        "psr/http-server-handler": "^1.0",
+        "psr/http-server-middleware": "^1.0"
+    },
+    "require-dev": {
+        "laminas/laminas-coding-standard": "^3.0",
+        "phpunit/phpunit": "^11.0",
+        "phpstan/phpstan": "^2.0"
+    },
+    "suggest": {
+        "ext-imagick": "For advanced image processing features",
+        "contenir/db-model": "For asset database management"
+    },
+    "autoload": {
+        "psr-4": {
+            "Contenir\\Asset\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "ContenirTest\\Asset\\": "test/"
+        }
+    },
+    "scripts": {
+        "check": [
+            "@cs-check",
+            "@analyze",
+            "@test"
+        ],
+        "cs-check": "phpcs",
+        "cs-fix": "phpcbf",
+        "analyze": "phpstan analyze --memory-limit=1G",
+        "analyze:baseline": "phpstan analyze --memory-limit=1G --generate-baseline",
+        "test": "phpunit --colors=always",
+        "test-coverage": "phpunit --colors=always --coverage-clover clover.xml"
+    }
+}
