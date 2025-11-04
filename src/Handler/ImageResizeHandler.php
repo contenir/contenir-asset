@@ -37,8 +37,27 @@ class ImageResizeHandler implements RequestHandlerInterface
     {
         // Extract route parameters
         $dimensions = $request->getAttribute('dimensions');
-        $imagePath = $request->getAttribute('image_path');
-        $format = $request->getAttribute('format', 'jpg');
+        $imagePathFull = $request->getAttribute('image_path');
+
+        // Extract format from requested path (e.g., "library/news/sm/file.avif")
+        // The source image will have its original extension (e.g., file.jpg)
+        $pathInfo = pathinfo($imagePathFull);
+        $format = $pathInfo['extension'] ?? 'jpg';
+        $imagePathWithoutExt = ($pathInfo['dirname'] !== '.' ? $pathInfo['dirname'] . '/' : '') . $pathInfo['filename'];
+
+        // Find source image - try common extensions
+        $imagePath = null;
+        foreach (['jpg', 'jpeg', 'png', 'gif', 'webp'] as $ext) {
+            $testPath = $this->publicPath . '/' . ltrim($imagePathWithoutExt . '.' . $ext, '/');
+            if (file_exists($testPath)) {
+                $imagePath = $imagePathWithoutExt . '.' . $ext;
+                break;
+            }
+        }
+
+        if (!$imagePath) {
+            return $this->errorResponse('Source image not found', 404);
+        }
 
         // Validate dimensions if whitelist is configured
         if (! empty($this->allowedDimensions) && ! $this->isAllowedDimension($dimensions)) {

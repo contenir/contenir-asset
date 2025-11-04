@@ -30,7 +30,8 @@ class AssetUrlGenerator
         $size = $options['size'] ?? '1200x800';
         $format = $options['format'] ?? 'jpg';
 
-        // Build URL: /cache/images/{dimensions}/{original-path}/filename.{format}
+        // Build URL: /asset/variation/{dimensions}/{directory}/filename.{format}
+        // Replace original extension with requested format (e.g., my-file.jpg -> my-file.avif)
         $pathParts = pathinfo($imagePath);
         $directory = $pathParts['dirname'] ?? '';
         $filename = $pathParts['filename'] ?? 'image';
