@@ -297,34 +297,13 @@ class AssetSrcSet extends AbstractHelper
             'format' => 'jpg',
         ]);
 
-        // Build srcset for img element
-        $srcset = $this->buildSrcSet(
-            $imagePath,
-            $metadata,
-            $dimensions,
-            $config,
-            'jpg'
-        );
-
         $attrs = $imgAttrs;
 
         // Use lazy load attributes if enabled
         if ($useLazyLoad && $this->lazyLoadConfig['enabled']) {
             $attrs[$this->lazyLoadConfig['img_src_attr']] = $src;
-            if ($srcset) {
-                $attrs[$this->lazyLoadConfig['img_srcset_attr']] = $srcset;
-            }
-            if (isset($config['sizes']) && is_string($config['sizes'])) {
-                $attrs[$this->lazyLoadConfig['img_sizes_attr']] = $config['sizes'];
-            }
         } else {
             $attrs['src'] = $src;
-            if ($srcset) {
-                $attrs['srcset'] = $srcset;
-            }
-            if (isset($config['sizes']) && is_string($config['sizes'])) {
-                $attrs['sizes'] = $config['sizes'];
-            }
         }
 
         return '<img' . $this->renderAttributes($attrs) . '>';
