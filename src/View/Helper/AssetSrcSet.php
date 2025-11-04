@@ -224,11 +224,15 @@ class AssetSrcSet extends AbstractHelper
         // Remove jpg from format variants (it will be in img fallback)
         $formats = array_diff($formats, ['jpg', 'jpeg']);
 
+        // 'dimensions' = array of size definitions ['800x800' => '2x']
+        // 'sizes' = HTML sizes attribute string '(max-width: 768px) 50vw'
+        $dimensions = $config['dimensions'] ?? [];
+
         foreach ($formats as $format) {
             $srcset = $this->buildSrcSet(
                 $imagePath,
                 $metadata,
-                $config['sizes'] ?? [],
+                $dimensions,
                 $config,
                 $format
             );
@@ -265,9 +269,9 @@ class AssetSrcSet extends AbstractHelper
         array $imgAttrs,
         bool $useLazyLoad
     ): string {
-        // Default src (usually largest or first size)
-        $sizes = $config['sizes'] ?? [];
-        $defaultSize = is_array($sizes) ? reset($sizes) : '1200x800';
+        // 'dimensions' = array of size definitions ['800x800' => '2x']
+        $dimensions = $config['dimensions'] ?? [];
+        $defaultSize = !empty($dimensions) ? array_key_first($dimensions) : '1200x800';
 
         $src = $this->urlGenerator->generate($imagePath, [
             'size' => $defaultSize,
@@ -280,7 +284,7 @@ class AssetSrcSet extends AbstractHelper
         $srcset = $this->buildSrcSet(
             $imagePath,
             $metadata,
-            $sizes,
+            $dimensions,
             $config,
             'jpg'
         );
