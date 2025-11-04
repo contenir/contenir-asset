@@ -37,7 +37,7 @@ class ImageCache
     public function getCachePath(string $sourcePath, string $dimensions, string $format): string
     {
         $pathInfo = pathinfo($sourcePath);
-        $filename = $pathInfo[PATHINFO_FILENAME] ?? 'image';
+        $filename = $pathInfo['filename'] ?? 'image';
 
         // Build cache path: /cache/images/{dimensions}/{original-path}/{filename}.{format}
         $cachePath = sprintf(
