@@ -272,37 +272,43 @@ class AssetSrcSet extends AbstractHelper
         array $imgAttrs,
         bool $useLazyLoad
     ): string {
-        // 'dimensions' = array of size definitions ['800x800' => '2x']
-        $dimensions = $config['dimensions'] ?? [];
-
-        // Get smallest dimension for fallback (sort by area)
-        $defaultSize = '1200x800';
-        if (!empty($dimensions)) {
-            $sortedDimensions = $dimensions;
-            uksort($sortedDimensions, function ($a, $b) {
-                [$aWidth, $aHeight] = explode('x', $a);
-                [$bWidth, $bHeight] = explode('x', $b);
-                $aArea = (int)$aWidth * (int)$aHeight;
-                $bArea = (int)$bWidth * (int)$bHeight;
-                return $aArea <=> $bArea;
-            });
-            $defaultSize = array_key_first($sortedDimensions);
-        }
-
-        $src = $this->urlGenerator->generate($imagePath, [
-            'size' => $defaultSize,
-            'crop' => $config['crop'] ?? 'cover',
-            'focal' => $config['focal'] ?? [0.5, 0.5],
-            'format' => 'jpg',
-        ]);
-
         $attrs = $imgAttrs;
 
-        // Use lazy load attributes if enabled
-        if ($useLazyLoad && $this->lazyLoadConfig['enabled']) {
-            $attrs[$this->lazyLoadConfig['img_src_attr']] = $src;
-        } else {
-            $attrs['src'] = $src;
+        // When using <picture> with <source> elements, the browser uses the sources
+        // and we don't need/want a src on <img> as it would cause an extra download.
+        // The <img> element is just a container for attributes (alt, class, etc).
+        // Only add src if we're NOT using formats (no <source> elements will be generated)
+        $hasFormats = !empty($config['formats'] ?? $this->defaultFormats);
+
+        if (!$hasFormats) {
+            // No formats means no <source> elements, so we need a direct img src
+            $dimensions = $config['dimensions'] ?? [];
+            $defaultSize = '1200x800';
+
+            if (!empty($dimensions)) {
+                $sortedDimensions = $dimensions;
+                uksort($sortedDimensions, function ($a, $b) {
+                    [$aWidth, $aHeight] = explode('x', $a);
+                    [$bWidth, $bHeight] = explode('x', $b);
+                    $aArea = (int)$aWidth * (int)$aHeight;
+                    $bArea = (int)$bWidth * (int)$bHeight;
+                    return $aArea <=> $bArea;
+                });
+                $defaultSize = array_key_first($sortedDimensions);
+            }
+
+            $src = $this->urlGenerator->generate($imagePath, [
+                'size' => $defaultSize,
+                'crop' => $config['crop'] ?? 'cover',
+                'focal' => $config['focal'] ?? [0.5, 0.5],
+                'format' => 'jpg',
+            ]);
+
+            if ($useLazyLoad && $this->lazyLoadConfig['enabled']) {
+                $attrs[$this->lazyLoadConfig['img_src_attr']] = $src;
+            } else {
+                $attrs['src'] = $src;
+            }
         }
 
         return '<img' . $this->renderAttributes($attrs) . '>';
