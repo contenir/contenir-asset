@@ -345,10 +345,10 @@ class AssetSrcSet extends AbstractHelper
             }
 
             if ($value === true) {
-                $html .= ' ' . $this->escapeHtmlAttr($key);
+                $html .= ' ' . htmlspecialchars($key, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
             } else {
-                $html .= ' ' . $this->escapeHtmlAttr($key) . '="'
-                    . $this->escapeHtmlAttr((string) $value) . '"';
+                $html .= ' ' . htmlspecialchars($key, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '="'
+                    . htmlspecialchars((string) $value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '"';
             }
         }
 
