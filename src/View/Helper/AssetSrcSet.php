@@ -47,6 +47,15 @@ class AssetSrcSet extends AbstractHelper
         'loading' => 'lazy',
         'decoding' => 'async',
     ];
+    private array $lazyLoadConfig = [
+        'enabled' => true,
+        'picture_attr' => 'data-lazysrc',
+        'source_srcset_attr' => 'data-lazysrc-srcset',
+        'source_sizes_attr' => 'data-lazysrc-sizes',
+        'img_src_attr' => 'data-lazysrc-src',
+        'img_srcset_attr' => 'data-lazysrc-srcset',
+        'img_sizes_attr' => 'data-lazysrc-sizes',
+    ];
 
     public function __construct(
         private AssetUrlGenerator $urlGenerator,
@@ -54,6 +63,7 @@ class AssetSrcSet extends AbstractHelper
     ) {
         $this->presets = $config['presets'] ?? [];
         $this->defaultFormats = $config['default_formats'] ?? $this->defaultFormats;
+        $this->lazyLoadConfig = array_merge($this->lazyLoadConfig, $config['lazy_load'] ?? []);
     }
 
     /**
@@ -123,18 +133,26 @@ class AssetSrcSet extends AbstractHelper
         $pictureAttrs = $config['picture'] ?? [];
         $imgAttrs = array_merge($this->defaultImgAttrs, $config['img'] ?? []);
 
+        // Determine if lazy loading is enabled for this element
+        $useLazyLoad = $this->shouldUseLazyLoad($imgAttrs);
+
+        // Add lazy load attribute to picture element if enabled
+        if ($useLazyLoad && $this->lazyLoadConfig['enabled']) {
+            $pictureAttrs[$this->lazyLoadConfig['picture_attr']] = true;
+        }
+
         $html = '<picture' . $this->renderAttributes($pictureAttrs) . '>';
 
         // Breakpoints (art direction - different crops/sizes for different viewports)
         if (isset($config['breakpoints'])) {
-            $html .= $this->buildBreakpointSources($imagePath, $metadata, $config);
+            $html .= $this->buildBreakpointSources($imagePath, $metadata, $config, $useLazyLoad);
         } else {
             // Standard responsive images with format variants
-            $html .= $this->buildFormatSources($imagePath, $metadata, $config, $formats);
+            $html .= $this->buildFormatSources($imagePath, $metadata, $config, $formats, $useLazyLoad);
         }
 
         // Fallback img element
-        $html .= $this->buildImgElement($imagePath, $metadata, $config, $imgAttrs);
+        $html .= $this->buildImgElement($imagePath, $metadata, $config, $imgAttrs, $useLazyLoad);
 
         $html .= '</picture>';
 
@@ -144,7 +162,8 @@ class AssetSrcSet extends AbstractHelper
     private function buildBreakpointSources(
         string $imagePath,
         array $metadata,
-        array $config
+        array $config,
+        bool $useLazyLoad
     ): string {
         $html = '';
         $breakpoints = $config['breakpoints'];
@@ -196,7 +215,8 @@ class AssetSrcSet extends AbstractHelper
         string $imagePath,
         array $metadata,
         array $config,
-        array $formats
+        array $formats,
+        bool $useLazyLoad
     ): string {
         $html = '';
 
@@ -215,11 +235,19 @@ class AssetSrcSet extends AbstractHelper
             if ($srcset) {
                 $attrs = [
                     'type' => $this->getMimeType($format),
-                    'srcset' => $srcset,
                 ];
 
-                if (isset($config['sizes'])) {
-                    $attrs['sizes'] = $config['sizes'];
+                // Use lazy load attributes if enabled
+                if ($useLazyLoad && $this->lazyLoadConfig['enabled']) {
+                    $attrs[$this->lazyLoadConfig['source_srcset_attr']] = $srcset;
+                    if (isset($config['sizes'])) {
+                        $attrs[$this->lazyLoadConfig['source_sizes_attr']] = $config['sizes'];
+                    }
+                } else {
+                    $attrs['srcset'] = $srcset;
+                    if (isset($config['sizes'])) {
+                        $attrs['sizes'] = $config['sizes'];
+                    }
                 }
 
                 $html .= '<source' . $this->renderAttributes($attrs) . '>';
@@ -233,7 +261,8 @@ class AssetSrcSet extends AbstractHelper
         string $imagePath,
         array $metadata,
         array $config,
-        array $imgAttrs
+        array $imgAttrs,
+        bool $useLazyLoad
     ): string {
         // Default src (usually largest or first size)
         $sizes = $config['sizes'] ?? [];
@@ -255,16 +284,25 @@ class AssetSrcSet extends AbstractHelper
             'jpg'
         );
 
-        $attrs = array_merge($imgAttrs, [
-            'src' => $src,
-        ]);
+        $attrs = $imgAttrs;
 
-        if ($srcset) {
-            $attrs['srcset'] = $srcset;
-        }
-
-        if (isset($config['sizes']) && is_string($config['sizes'])) {
-            $attrs['sizes'] = $config['sizes'];
+        // Use lazy load attributes if enabled
+        if ($useLazyLoad && $this->lazyLoadConfig['enabled']) {
+            $attrs[$this->lazyLoadConfig['img_src_attr']] = $src;
+            if ($srcset) {
+                $attrs[$this->lazyLoadConfig['img_srcset_attr']] = $srcset;
+            }
+            if (isset($config['sizes']) && is_string($config['sizes'])) {
+                $attrs[$this->lazyLoadConfig['img_sizes_attr']] = $config['sizes'];
+            }
+        } else {
+            $attrs['src'] = $src;
+            if ($srcset) {
+                $attrs['srcset'] = $srcset;
+            }
+            if (isset($config['sizes']) && is_string($config['sizes'])) {
+                $attrs['sizes'] = $config['sizes'];
+            }
         }
 
         return '<img' . $this->renderAttributes($attrs) . '>';
@@ -355,5 +393,33 @@ class AssetSrcSet extends AbstractHelper
         }
 
         return [];
+    }
+
+    /**
+     * Determine if lazy loading should be used for this element
+     *
+     * Lazy loading is enabled if:
+     * - Global lazy load config is enabled AND
+     * - The img has data-lazysrc attribute OR
+     * - The img has loading="lazy" attribute (and not loading="eager")
+     */
+    private function shouldUseLazyLoad(array $imgAttrs): bool
+    {
+        if (!$this->lazyLoadConfig['enabled']) {
+            return false;
+        }
+
+        // Explicitly enabled with data-lazysrc
+        if (isset($imgAttrs['data-lazysrc']) && $imgAttrs['data-lazysrc']) {
+            return true;
+        }
+
+        // Check loading attribute
+        if (isset($imgAttrs['loading'])) {
+            return $imgAttrs['loading'] === 'lazy';
+        }
+
+        // Default: use lazy load if enabled
+        return true;
     }
 }
