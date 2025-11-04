@@ -56,7 +56,11 @@ class ImageResizeHandler implements RequestHandlerInterface
         }
 
         if (!$imagePath) {
-            return $this->errorResponse('Source image not found', 404);
+            $debug = "imagePathFull: $imagePathFull\n";
+            $debug .= "imagePathWithoutExt: $imagePathWithoutExt\n";
+            $debug .= "Tried extensions: jpg, jpeg, png, gif, webp\n";
+            $debug .= "Test path example: " . $this->publicPath . '/' . ltrim($imagePathWithoutExt . '.jpg', '/');
+            return $this->errorResponse("Source image not found\n\n$debug", 404);
         }
 
         // Validate dimensions if whitelist is configured
