@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Contenir\Asset\View\Helper;
 
+use Contenir\Asset\Service\AssetUrlGenerator;
 use InvalidArgumentException;
 use Laminas\View\Helper\AbstractHelper;
 
