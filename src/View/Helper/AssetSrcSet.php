@@ -63,7 +63,9 @@ class AssetSrcSet extends AbstractHelper
         array $config = []
     ) {
         $this->presets = $config['presets'] ?? [];
-        $this->defaultFormats = $config['default_formats'] ?? $this->defaultFormats;
+        $defaultFormats = $config['default_formats'] ?? $this->defaultFormats;
+        // Remove duplicates that can occur when config is merged from multiple sources
+        $this->defaultFormats = array_values(array_unique($defaultFormats));
         $this->lazyLoadConfig = array_merge($this->lazyLoadConfig, $config['lazy_load'] ?? []);
     }
 
@@ -131,6 +133,8 @@ class AssetSrcSet extends AbstractHelper
     private function buildPictureElement(string $imagePath, array $metadata, array $config): string
     {
         $formats = $config['formats'] ?? $this->defaultFormats;
+        // Remove duplicate formats (can occur when config is merged from multiple sources)
+        $formats = array_values(array_unique($formats));
         $pictureAttrs = $config['picture'] ?? [];
         $imgAttrs = array_merge($this->defaultImgAttrs, $config['img'] ?? []);
 
