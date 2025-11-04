@@ -271,7 +271,20 @@ class AssetSrcSet extends AbstractHelper
     ): string {
         // 'dimensions' = array of size definitions ['800x800' => '2x']
         $dimensions = $config['dimensions'] ?? [];
-        $defaultSize = !empty($dimensions) ? array_key_first($dimensions) : '1200x800';
+
+        // Get smallest dimension for fallback (sort by area)
+        $defaultSize = '1200x800';
+        if (!empty($dimensions)) {
+            $sortedDimensions = $dimensions;
+            uksort($sortedDimensions, function ($a, $b) {
+                [$aWidth, $aHeight] = explode('x', $a);
+                [$bWidth, $bHeight] = explode('x', $b);
+                $aArea = (int)$aWidth * (int)$aHeight;
+                $bArea = (int)$bWidth * (int)$bHeight;
+                return $aArea <=> $bArea;
+            });
+            $defaultSize = array_key_first($sortedDimensions);
+        }
 
         $src = $this->urlGenerator->generate($imagePath, [
             'size' => $defaultSize,
@@ -324,9 +337,19 @@ class AssetSrcSet extends AbstractHelper
             return '';
         }
 
+        // Sort dimensions from smallest to largest by calculating area (width * height)
+        $sortedSizes = $sizes;
+        uksort($sortedSizes, function ($a, $b) {
+            [$aWidth, $aHeight] = explode('x', $a);
+            [$bWidth, $bHeight] = explode('x', $b);
+            $aArea = (int)$aWidth * (int)$aHeight;
+            $bArea = (int)$bWidth * (int)$bHeight;
+            return $aArea <=> $bArea;
+        });
+
         $srcsetParts = [];
 
-        foreach ($sizes as $size => $descriptor) {
+        foreach ($sortedSizes as $size => $descriptor) {
             $url = $this->urlGenerator->generate($imagePath, [
                 'size' => $size,
                 'crop' => $config['crop'] ?? 'cover',
