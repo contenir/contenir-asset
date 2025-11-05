@@ -246,16 +246,17 @@ class AssetSrcSet extends AbstractHelper
                     'type' => $this->getMimeType($format),
                 ];
 
-                // Use lazy load attributes for srcset only
+                // Use lazy load attributes for srcset and sizes
                 if ($useLazyLoad && $this->lazyLoadConfig['enabled']) {
                     $attrs[$this->lazyLoadConfig['source_srcset_attr']] = $srcset;
+                    if (isset($config['sizes'])) {
+                        $attrs[$this->lazyLoadConfig['source_sizes_attr']] = $config['sizes'];
+                    }
                 } else {
                     $attrs['srcset'] = $srcset;
-                }
-
-                // sizes attribute is always needed (not lazy-loaded) so browser knows image dimensions
-                if (isset($config['sizes'])) {
-                    $attrs['sizes'] = $config['sizes'];
+                    if (isset($config['sizes'])) {
+                        $attrs['sizes'] = $config['sizes'];
+                    }
                 }
 
                 $html .= '<source' . $this->renderAttributes($attrs) . '>';
