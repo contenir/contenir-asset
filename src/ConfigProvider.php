@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Contenir\Asset;
 
+use Contenir\Asset\Command\GenerateVariationsCommand;
+use Contenir\Asset\Command\GenerateVariationsCommandFactory;
 use Contenir\Asset\Handler\ImageResizeHandler;
 use Contenir\Asset\Handler\ImageResizeHandlerFactory;
 use Contenir\Asset\Service\AssetUrlGenerator;
@@ -26,6 +28,7 @@ class ConfigProvider
         return [
             'dependencies' => $this->getDependencies(),
             'view_helpers' => $this->getViewHelpers(),
+            'laminas-cli' => $this->getCliConfig(),
             'contenir_asset' => $this->getAssetConfig(),
         ];
     }
@@ -38,6 +41,16 @@ class ConfigProvider
                 ImageCache::class => ImageCacheFactory::class,
                 ImageResizeHandler::class => ImageResizeHandlerFactory::class,
                 AssetUrlGenerator::class => AssetUrlGeneratorFactory::class,
+                GenerateVariationsCommand::class => GenerateVariationsCommandFactory::class,
+            ],
+        ];
+    }
+
+    public function getCliConfig(): array
+    {
+        return [
+            'commands' => [
+                'asset:generate-variations' => GenerateVariationsCommand::class,
             ],
         ];
     }

@@ -1,5 +1,5 @@
 {
-    "name": "contenir/asset",
+    "name": "contenir/contenir-asset",
     "description": "Contenir Asset component - Responsive image generation and management for Mezzio",
     "type": "library",
     "license": "BSD-3-Clause",
