@@ -33,8 +33,13 @@ use function trim;
 /**
  * Generate Asset Variations Command
  *
- * Generates all image variations based on configured presets.
- * This pre-generates variations that would normally be created on-demand.
+ * Generates AVIF image variations (best format) based on configured presets.
+ * Other formats (WebP, JPEG) are generated on-demand as needed.
+ *
+ * This strategy:
+ * - Pre-warms cache with AVIF (best compression, modern browsers)
+ * - Saves disk space (66% less than generating all formats)
+ * - On-demand handler creates WebP/JPEG fallbacks for older browsers
  *
  * Usage:
  *   vendor/bin/laminas asset:generate-variations           # Generate all missing variations
@@ -236,9 +241,11 @@ class GenerateVariationsCommand extends Command
      */
     private function buildVariationMatrix(array $presets): array
     {
-        $defaultFormats = $this->config['default_formats'] ?? ['avif', 'webp', 'jpg'];
         $dimensionFilter = $this->getDimensionFilter();
         $formatFilter = $this->getFormatFilter();
+
+        // Only generate AVIF (best format) - other formats generated on-demand
+        $bestFormat = 'avif';
 
         $matrix = [];
 
@@ -248,7 +255,6 @@ class GenerateVariationsCommand extends Command
             }
 
             $dimensions = $preset['dimensions'];
-            $formats = $preset['formats'] ?? $defaultFormats;
             $crop = $preset['crop'] ?? 'cover';
 
             foreach ($dimensions as $dimension => $descriptor) {
@@ -257,20 +263,18 @@ class GenerateVariationsCommand extends Command
                     continue;
                 }
 
-                foreach ($formats as $format) {
-                    // Apply format filter
-                    if ($formatFilter && ! in_array($format, $formatFilter, true)) {
-                        continue;
-                    }
-
-                    $matrix[] = [
-                        'preset' => $presetName,
-                        'dimension' => $dimension,
-                        'format' => $format,
-                        'crop' => $crop,
-                        'focal' => [0.5, 0.5], // Default focal point (center)
-                    ];
+                // Apply format filter (if user explicitly wants specific format)
+                if ($formatFilter && ! in_array($bestFormat, $formatFilter, true)) {
+                    continue;
                 }
+
+                $matrix[] = [
+                    'preset' => $presetName,
+                    'dimension' => $dimension,
+                    'format' => $bestFormat,
+                    'crop' => $crop,
+                    'focal' => [0.5, 0.5], // Default focal point (center)
+                ];
             }
         }
 
