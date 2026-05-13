@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Contenir\Asset;
 
 use Contenir\Db\Model\Repository\Factory\RepositoryFactory;
@@ -15,17 +17,17 @@ class Module
      */
     public function getConfig()
     {
-        $config = [
-            'asset' => [
+        return [
+            'asset'              => [
                 'asset_manager' => AssetManager::class,
                 'repository'    => [
                     'asset' => Model\Repository\BaseAssetRepository::class,
                 ],
-                'srcset' => [
-                    'helper' => '/usr/local/bin/convert'
-                ]
+                'srcset'        => [
+                    'helper' => '/usr/local/bin/convert',
+                ],
             ],
-            'router' => [
+            'router'             => [
                 'routes' => [
                     'imageresize' => [
                         'type'    => Regex::class,
@@ -33,31 +35,35 @@ class Module
                             'regex'    => '/asset/(?<folder>[a-zA-Z0-9_\-\/\%\.]+).*/\.(?<dimensions>[\d\.]+x[\d\.]*)/(?<filename>.*)',
                             'defaults' => [
                                 'controller' => Controller\ImageResizeController::class,
-                                'action'     => 'index'
+                                'action'     => 'index',
                             ],
-                            'spec' => '/asset/%folder%/.%dimensions%/%filename%',
+                            'spec'     => '/asset/%folder%/.%dimensions%/%filename%',
                         ],
                     ],
-                ]
+                ],
             ],
-            'controllers' => [
+            'controllers'        => [
                 'factories' => [
                     Controller\ImageResizeController::class => InvokableFactory::class,
-                ]
+                ],
             ],
-            'service_manager' => [
+            'service_manager'    => [
                 'factories' => [
                     AssetManager::class                         => AssetManagerFactory::class,
                     Model\Entity\BaseAssetEntity::class         => InvokableFactory::class,
-                    Model\Repository\BaseAssetRepository::class => RepositoryFactory::class
-                ]
+                    Model\Repository\BaseAssetRepository::class => RepositoryFactory::class,
+                ],
             ],
-            'view_helpers' => [
-                'aliases' => [
+            'view_helpers'       => [
+                'aliases'   => [
                     'asset'        => View\Helper\Asset::class,
                     'Asset'        => View\Helper\Asset::class,
+                    'assetAspect'  => View\Helper\AssetAspect::class,
+                    'AssetAspect'  => View\Helper\AssetAspect::class,
                     'assetContent' => View\Helper\AssetContent::class,
                     'AssetContent' => View\Helper\AssetContent::class,
+                    'assetSize'    => View\Helper\AssetSize::class,
+                    'AssetSize'    => View\Helper\AssetSize::class,
                     'assetSizes'   => View\Helper\AssetSizes::class,
                     'AssetSizes'   => View\Helper\AssetSizes::class,
                     'assetSrcset'  => View\Helper\AssetSrcSet::class,
@@ -65,11 +71,13 @@ class Module
                     'AssetSrcset'  => View\Helper\AssetSrcSet::class,
                     'AssetSrcSet'  => View\Helper\AssetSrcSet::class,
                     'assetUrl'     => View\Helper\AssetUrl::class,
-                    'AssetUrl'     => View\Helper\AssetUrl::class
+                    'AssetUrl'     => View\Helper\AssetUrl::class,
                 ],
                 'factories' => [
                     View\Helper\Asset::class        => View\Helper\AssetFactory::class,
+                    View\Helper\AssetAspect::class  => View\Helper\AssetAspectFactory::class,
                     View\Helper\AssetContent::class => InvokableFactory::class,
+                    View\Helper\AssetSize::class    => View\Helper\AssetSizeFactory::class,
                     View\Helper\AssetSizes::class   => View\Helper\AssetSizesFactory::class,
                     View\Helper\AssetSrcSet::class  => View\Helper\AssetSrcSetFactory::class,
                     View\Helper\AssetUrl::class     => View\Helper\AssetUrlFactory::class,
@@ -79,12 +87,10 @@ class Module
                 'assetsrcset' => [
                     'sizes' => [],
                 ],
-                'assetsizes' => [
+                'assetsizes'  => [
                     'sizes' => [],
                 ],
-            ]
+            ],
         ];
-
-        return $config;
     }
 }
