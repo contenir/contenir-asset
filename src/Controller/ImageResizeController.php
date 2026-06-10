@@ -10,6 +10,16 @@ namespace Contenir\Asset\Controller;
 
 use Laminas\Mvc\Controller\AbstractActionController;
 
+/**
+ * Legacy on-demand image resizer serving the dot-notation `.<dimensions>` scheme
+ * (e.g. `/asset/<folder>/.480x/<file>`) paired with {@see \Contenir\Asset\View\Helper\AssetSrcSet}.
+ *
+ * @deprecated Superseded by contenir/contenir-asset-laminas-mvc, which serves
+ *             on-demand variants (incl. WebP/AVIF) at
+ *             `/asset/<folder>/_variant/<dimensions>/<file>.<fmt>` via
+ *             contenir/storage's ImageResizer. Kept working for sites still on the
+ *             `.<dimensions>` scheme; will be removed once no consumer emits it.
+ */
 class ImageResizeController extends AbstractActionController
 {
     public function indexAction()
