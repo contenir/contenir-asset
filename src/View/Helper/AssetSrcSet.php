@@ -4,6 +4,16 @@ namespace Contenir\Asset\View\Helper;
 
 use Laminas\View\Helper\AbstractHtmlElement;
 
+/**
+ * Legacy responsive srcset helper emitting the dot-notation `.<dimensions>` scheme
+ * (e.g. `/asset/<folder>/.480x/<file>`) served by {@see \Contenir\Asset\Controller\ImageResizeController}.
+ *
+ * @deprecated Superseded by contenir/contenir-asset-laminas-mvc's `storageSrcSet`
+ *             / `storageSources` helpers, which emit `_variant/<dimensions>/`
+ *             URLs and `<source>` elements for WebP/AVIF. Kept working for sites
+ *             still on the `.<dimensions>` scheme; will be removed once no consumer
+ *             emits it.
+ */
 class AssetSrcSet extends AbstractHtmlElement
 {
     protected $rootPath;
