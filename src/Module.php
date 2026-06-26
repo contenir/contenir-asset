@@ -60,8 +60,6 @@ class Module
                     'Asset'        => View\Helper\Asset::class,
                     'assetAspect'  => View\Helper\AssetAspect::class,
                     'AssetAspect'  => View\Helper\AssetAspect::class,
-                    'assetContent' => View\Helper\AssetContent::class,
-                    'AssetContent' => View\Helper\AssetContent::class,
                     'assetSize'    => View\Helper\AssetSize::class,
                     'AssetSize'    => View\Helper\AssetSize::class,
                     'assetSizes'   => View\Helper\AssetSizes::class,
@@ -76,7 +74,6 @@ class Module
                 'factories' => [
                     View\Helper\Asset::class        => View\Helper\AssetFactory::class,
                     View\Helper\AssetAspect::class  => View\Helper\AssetAspectFactory::class,
-                    View\Helper\AssetContent::class => InvokableFactory::class,
                     View\Helper\AssetSize::class    => View\Helper\AssetSizeFactory::class,
                     View\Helper\AssetSizes::class   => View\Helper\AssetSizesFactory::class,
                     View\Helper\AssetSrcSet::class  => View\Helper\AssetSrcSetFactory::class,
