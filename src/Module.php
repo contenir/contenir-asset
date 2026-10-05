@@ -4,28 +4,31 @@ declare(strict_types=1);
 
 namespace Contenir\Asset;
 
-use Contenir\Db\Model\Repository\Factory\RepositoryFactory;
 use Laminas\Router\Http\Regex;
-use Laminas\ServiceManager\Factory\InvokableFactory;
 
-class Module
+/**
+ * laminas-mvc module: asset configuration defaults, the AssetManager
+ * service, the asset view helpers and the legacy image resize route.
+ *
+ * @api
+ */
+final readonly class Module
 {
     /**
-     * Retrieve default laminas-paginator config for laminas-mvc context.
-     *
-     * @return array
+     * @return array<string, mixed>
      */
-    public function getConfig()
+    public function getConfig(): array
     {
         return [
             'asset'              => [
-                'asset_manager' => AssetManager::class,
-                'repository'    => [
-                    'asset' => Model\Repository\BaseAssetRepository::class,
-                ],
-                'srcset'        => [
-                    'helper' => '/usr/local/bin/convert',
-                ],
+                'entity'            => null,
+                'asset_manager'     => AssetManager::class,
+                'public_path'       => './public',
+                'storage_directory' => '/asset/user',
+                'convert'           => 'convert',
+                'logger'            => null,
+                'cdn'               => ['host' => null],
+                'srcset'            => ['helper' => '/usr/local/bin/convert'],
             ],
             'router'             => [
                 'routes' => [
@@ -35,7 +38,7 @@ class Module
                             'regex'    => '/asset/(?<folder>[a-zA-Z0-9_\-\/\%\.]+).*/\.(?<dimensions>[\d\.]+x[\d\.]*)/(?<filename>.*)',
                             'defaults' => [
                                 'controller' => Controller\ImageResizeController::class,
-                                'action'     => 'index',
+                                'action'     => 'resize',
                             ],
                             'spec'     => '/asset/%folder%/.%dimensions%/%filename%',
                         ],
@@ -44,49 +47,43 @@ class Module
             ],
             'controllers'        => [
                 'factories' => [
-                    Controller\ImageResizeController::class => InvokableFactory::class,
+                    Controller\ImageResizeController::class => Controller\ImageResizeControllerFactory::class,
                 ],
             ],
             'service_manager'    => [
                 'factories' => [
-                    AssetManager::class                         => AssetManagerFactory::class,
-                    Model\Entity\BaseAssetEntity::class         => InvokableFactory::class,
-                    Model\Repository\BaseAssetRepository::class => RepositoryFactory::class,
+                    AssetManager::class => AssetManagerFactory::class,
                 ],
             ],
             'view_helpers'       => [
                 'aliases'   => [
-                    'asset'        => View\Helper\Asset::class,
-                    'Asset'        => View\Helper\Asset::class,
-                    'assetAspect'  => View\Helper\AssetAspect::class,
-                    'AssetAspect'  => View\Helper\AssetAspect::class,
-                    'assetSize'    => View\Helper\AssetSize::class,
-                    'AssetSize'    => View\Helper\AssetSize::class,
-                    'assetSizes'   => View\Helper\AssetSizes::class,
-                    'AssetSizes'   => View\Helper\AssetSizes::class,
-                    'assetSrcset'  => View\Helper\AssetSrcSet::class,
-                    'assetSrcSet'  => View\Helper\AssetSrcSet::class,
-                    'AssetSrcset'  => View\Helper\AssetSrcSet::class,
-                    'AssetSrcSet'  => View\Helper\AssetSrcSet::class,
-                    'assetUrl'     => View\Helper\AssetUrl::class,
-                    'AssetUrl'     => View\Helper\AssetUrl::class,
+                    'asset'       => View\Helper\Asset::class,
+                    'Asset'       => View\Helper\Asset::class,
+                    'assetAspect' => View\Helper\AssetAspect::class,
+                    'AssetAspect' => View\Helper\AssetAspect::class,
+                    'assetSize'   => View\Helper\AssetSize::class,
+                    'AssetSize'   => View\Helper\AssetSize::class,
+                    'assetSizes'  => View\Helper\AssetSizes::class,
+                    'AssetSizes'  => View\Helper\AssetSizes::class,
+                    'assetSrcset' => View\Helper\AssetSrcSet::class,
+                    'assetSrcSet' => View\Helper\AssetSrcSet::class,
+                    'AssetSrcset' => View\Helper\AssetSrcSet::class,
+                    'AssetSrcSet' => View\Helper\AssetSrcSet::class,
+                    'assetUrl'    => View\Helper\AssetUrl::class,
+                    'AssetUrl'    => View\Helper\AssetUrl::class,
                 ],
                 'factories' => [
-                    View\Helper\Asset::class        => View\Helper\AssetFactory::class,
-                    View\Helper\AssetAspect::class  => View\Helper\AssetAspectFactory::class,
-                    View\Helper\AssetSize::class    => View\Helper\AssetSizeFactory::class,
-                    View\Helper\AssetSizes::class   => View\Helper\AssetSizesFactory::class,
-                    View\Helper\AssetSrcSet::class  => View\Helper\AssetSrcSetFactory::class,
-                    View\Helper\AssetUrl::class     => View\Helper\AssetUrlFactory::class,
+                    View\Helper\Asset::class       => View\Helper\AssetFactory::class,
+                    View\Helper\AssetAspect::class => View\Helper\AssetAspectFactory::class,
+                    View\Helper\AssetSize::class   => View\Helper\AssetSizeFactory::class,
+                    View\Helper\AssetSizes::class  => View\Helper\AssetSizesFactory::class,
+                    View\Helper\AssetSrcSet::class => View\Helper\AssetSrcSetFactory::class,
+                    View\Helper\AssetUrl::class    => View\Helper\AssetUrlFactory::class,
                 ],
             ],
             'view_helper_config' => [
-                'assetsrcset' => [
-                    'sizes' => [],
-                ],
-                'assetsizes'  => [
-                    'sizes' => [],
-                ],
+                'assetsrcset' => ['sizes' => []],
+                'assetsizes'  => ['sizes' => []],
             ],
         ];
     }

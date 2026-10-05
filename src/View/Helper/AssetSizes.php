@@ -1,45 +1,53 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Contenir\Asset\View\Helper;
 
-use Laminas\View\Helper\AbstractHtmlElement;
+use Laminas\Escaper\Escaper;
 
-class AssetSizes extends AbstractHtmlElement
+use function array_key_last;
+use function implode;
+use function is_int;
+use function trim;
+
+/**
+ * Builds an escaped `sizes` attribute value from breakpoints: integer keys
+ * become "(max-width: Npx)", string keys are used as media queries, and
+ * the last entry is the unconditional default.
+ *
+ *     <img sizes="<?= $this->assetSizes([768 => 100, 1200 => 600, 'default' => 900]) ?>">
+ *     // (max-width: 768px) 100px, (max-width: 1200px) 600px, 900px
+ *
+ * @api
+ */
+final class AssetSizes
 {
-    protected $sizes = [];
+    /**
+     * @param array<string, array<int|string, int|string>> $sizes named size sets from configuration
+     */
+    public function __construct(
+        private readonly array $sizes = [],
+        private readonly Escaper $escaper = new Escaper(),
+    ) {}
 
-    public function getSizes()
+    /**
+     * @param string|array<array-key, mixed>|null $options a size set name, an array of sizes, or ['sizes' => ...]
+     */
+    public function __invoke(string|array|null $options = null): string
     {
-        return $this->sizes;
-    }
-
-    public function setSizes(array $sizes = [])
-    {
-        $this->sizes = $sizes;
-    }
-
-    public function __invoke(
-        $options = null
-    ) {
+        $sizes = SizeOptions::resolve($options, $this->sizes);
+        $last  = array_key_last($sizes);
         $value = [];
-        $sizes = $options['sizes'] ?? $options;
-
-        if (is_string($sizes)) {
-            $sizes = $this->sizes[$sizes] ?? [];
-        } elseif (is_array($sizes)) {
-            $sizes = $options['sizes'] ?? [];
+        foreach ($sizes as $breakpoint => $width) {
+            $query = match (true) {
+                $breakpoint === $last => '',
+                is_int($breakpoint) => "(max-width: {$breakpoint}px)",
+                default             => $breakpoint,
+            };
+            $value[] = trim("{$query} {$width}px");
         }
 
-        foreach ($sizes as $mediaQuery => $width) {
-            if ($mediaQuery == array_key_last($sizes)) {
-                $mediaQuery = '';
-            } elseif (is_numeric($mediaQuery)) {
-                $mediaQuery = sprintf('(max-width: %spx)', $mediaQuery);
-            }
-
-            $value[] = trim(sprintf('%s %spx', $mediaQuery, $width));
-        }
-
-        return $this->getView()->escapeHtmlAttr(join(', ', $value));
+        return $this->escaper->escapeHtmlAttr(implode(', ', $value));
     }
 }

@@ -1,25 +1,23 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Contenir\Asset\View\Helper;
 
+use Contenir\Asset\Container\AssetConfig;
+use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 
-class AssetSizesFactory
+/**
+ * @api
+ */
+final readonly class AssetSizesFactory
 {
-    public function __invoke(
-        ContainerInterface $container,
-        $requestedName
-    ): AssetSizes {
-        $config = $container->get('config') ?? [];
-        $helper = new AssetSizes($config);
-
-        if (isset($config['view_helper_config']['assetsizes'])) {
-            $configHelper = $config['view_helper_config']['assetsizes'];
-            if (isset($configHelper['sizes'])) {
-                $helper->setSizes($configHelper['sizes']);
-            }
-        }
-
-        return $helper;
+    /**
+     * @throws ContainerExceptionInterface
+     */
+    public function __invoke(ContainerInterface $container): AssetSizes
+    {
+        return new AssetSizes(AssetConfig::from($container)->sizeSets('view_helper_config.assetsizes.sizes'));
     }
 }

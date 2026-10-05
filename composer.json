@@ -1,38 +1,44 @@
 {
     "name": "contenir/contenir-asset",
-    "description": "Contenir Asset component",
+    "description": "Asset records, storage and image derivatives for laminas-mvc, on contenir-db-model",
     "license": "BSD-3-Clause",
+    "type": "library",
     "keywords": [
         "contenir",
         "laminas",
-        "mvc"
+        "mvc",
+        "asset",
+        "image"
     ],
     "homepage": "https://contenir.com.au",
     "support": {
         "docs": "https://docs.contenir.com.au/contenir-asset/",
-        "issues": "https://contenir.com.au/issues",
+        "issues": "https://github.com/contenir/contenir-asset/issues",
         "source": "https://github.com/contenir/contenir-asset"
     },
-    "config": {
-        "sort-packages": true,
-        "allow-plugins": {
-            "dealerdirect/phpcodesniffer-composer-installer": true
-        }
-    },
-    "extra": {
-        "laminas": {
-            "component": "Contenir\\Asset"
-        }
-    },
     "require": {
-        "php": "^8.0.0",
-        "contenir/contenir-db-model": "^1.0",
-        "laminas/laminas-mvc": "^3.0"
+        "php": "~8.3.0 || ~8.4.0 || ~8.5.0",
+        "contenir/contenir-db-model": "^2.0@RC",
+        "laminas/laminas-escaper": "^2.13",
+        "laminas/laminas-http": "^2.19",
+        "laminas/laminas-mvc": "^3.8",
+        "laminas/laminas-permissions-acl": "^2.16",
+        "laminas/laminas-router": "^3.13",
+        "laminas/laminas-servicemanager": "^3.22 || ^4.0",
+        "laminas/laminas-view": "^2.35",
+        "psr/container": "^1.1 || ^2.0",
+        "psr/log": "^2.0 || ^3.0"
     },
     "require-dev": {
-        "laminas/laminas-coding-standard": "^3.0",
-        "phpunit/phpunit": "^11.0"
+        "php-db/phpdb-qa-tools": "0.1.x-dev",
+        "php-db/phpdb-sqlite": "^0.2.0",
+        "phpunit/phpunit": "^11.5.42"
     },
+    "suggest": {
+        "ext-intl": "Transliterates accented characters in stored asset file names"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
     "autoload": {
         "psr-4": {
             "Contenir\\Asset\\": "src/"
@@ -40,17 +46,38 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "ContenirTest\\Asset\\": "test/"
+            "ContenirTest\\Asset\\": "tests/"
+        }
+    },
+    "config": {
+        "platform": {
+            "php": "8.3.99"
+        },
+        "sort-packages": true
+    },
+    "extra": {
+        "laminas": {
+            "component": "Contenir\\Asset"
         }
     },
     "scripts": {
         "check": [
             "@cs-check",
-            "@test"
+            "@static-analysis",
+            "@test",
+            "@test-integration"
         ],
-        "cs-check": "phpcs",
-        "cs-fix": "phpcbf",
-        "test": "phpunit --colors=always",
-        "test-coverage": "phpunit --colors=always --coverage-clover clover.xml"
+        "cs-check": [
+            "mago format --check",
+            "mago lint"
+        ],
+        "cs-fix": [
+            "mago format",
+            "mago lint --fix"
+        ],
+        "static-analysis": "mago analyze",
+        "test": "phpunit --colors=always --testsuite unit",
+        "test-coverage": "phpunit --colors=always --coverage-clover clover.xml",
+        "test-integration": "phpunit --colors=always --testsuite integration"
     }
 }

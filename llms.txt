@@ -1,0 +1,22 @@
+# contenir-asset
+
+> Asset records, file storage, ImageMagick derivatives and view helpers for laminas-mvc, on contenir/contenir-db-model 2.x. PHP 8.3+. Version 2.x is not compatible with 1.x.
+
+Key facts for code generation:
+
+- The application defines `#[Table('asset')] final class Asset extends Contenir\Asset\Model\Entity\BaseAssetEntity` and adds only extra columns (e.g. `#[Column('entry_id')] public ?int $entryId = null;`). Set `'asset' => ['entity' => Asset::class]`.
+- Properties are camelCase: `imageLg`, `mimeType`, `userId`, `assetId`. The 1.x `$asset->image_lg` style is gone.
+- `AssetManager::addAsset($target, $user, $parent, $type)` copies owners' primary-key columns onto same-named asset columns. Targets implement `ResourceInterface`.
+- `storeAsset($asset, $target, $type, $_FILES['x'] | $path, '1200x800'?)` copies the file, makes `-lg.jpg` and `-sm.jpg` derivatives when `asset.convert` is set, and saves.
+- `updateAsset($asset, $user, ['title' => …])` takes PROPERTY names.
+- `deleteAsset()` deletes the row only; `removeAsset()` deletes the files only.
+- There is no `BaseAssetRepository` any more; query through `$assetManager` or `$em->getRepository(Asset::class)`.
+
+## Docs
+
+- [Configuration](docs/configuration.md): options and the required table schema
+- [AssetManager](docs/asset-manager.md): methods, linking, storage, errors
+- [View helpers](docs/view-helpers.md)
+- [Legacy resizer](docs/legacy-resizer.md): deprecated `.WxH` scheme
+- [Upgrade guide](UPGRADE-2.0.md)
+- [Changelog](CHANGELOG.md)

@@ -4,15 +4,25 @@ declare(strict_types=1);
 
 namespace Contenir\Asset\View\Helper;
 
+use Contenir\Asset\Container\AssetConfig;
+use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 
-class AssetAspectFactory
+/**
+ * @api
+ */
+final readonly class AssetAspectFactory
 {
+    /**
+     * @throws ContainerExceptionInterface
+     */
     public function __invoke(ContainerInterface $container): AssetAspect
     {
-        $config     = $container->has('config') ? $container->get('config') : [];
-        $publicPath = (string) ($config['asset']['cache']['public_path'] ?? './public');
+        $config = AssetConfig::from($container);
 
-        return new AssetAspect($publicPath);
+        return new AssetAspect(
+            $config->string('asset.public_path')
+            ?? $config->stringOr('asset.cache.public_path', './public'),
+        );
     }
 }
