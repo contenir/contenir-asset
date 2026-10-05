@@ -1,17 +1,30 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Contenir\Asset\View\Helper;
 
+use Contenir\Asset\AssetManager;
+use Contenir\Asset\AssetManagerInterface;
+use Contenir\Asset\Container\AssetConfig;
+use Contenir\Asset\Container\Services;
+use Contenir\Asset\Exception\RuntimeException;
+use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 
-class AssetFactory
+/**
+ * @api
+ */
+final readonly class AssetFactory
 {
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws RuntimeException
+     */
     public function __invoke(ContainerInterface $container): Asset
     {
-        $config            = $container->get('config')['asset'] ?? [];
-        $assetManagerClass = $config['asset_manager']           ?? null;
-        $assetManager      = $container->get($assetManagerClass);
+        $manager = AssetConfig::from($container)->stringOr('asset.asset_manager', AssetManager::class);
 
-        return new Asset($assetManager);
+        return new Asset(Services::get($container, $manager, AssetManagerInterface::class));
     }
 }

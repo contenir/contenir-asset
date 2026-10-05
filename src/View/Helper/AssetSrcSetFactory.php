@@ -1,28 +1,31 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Contenir\Asset\View\Helper;
 
+use Contenir\Asset\Container\AssetConfig;
+use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 
-class AssetSrcSetFactory
+/**
+ * @api
+ */
+final readonly class AssetSrcSetFactory
 {
-    public function __invoke(
-        ContainerInterface $container,
-        $requestedName
-    ): AssetSrcSet {
-        $config = $container->get('config') ?? [];
-        $helper = new AssetSrcSet($config);
+    /**
+     * @throws ContainerExceptionInterface
+     *
+     * @mago-expect analysis:deprecated-class Builds the deprecated legacy helper for sites still using it.
+     */
+    public function __invoke(ContainerInterface $container): AssetSrcSet
+    {
+        $config = AssetConfig::from($container);
 
-        if (isset($config['view_helper_config']['assetsrcset'])) {
-            $configHelper = $config['view_helper_config']['assetsrcset'];
-            if (isset($configHelper['root_path'])) {
-                $helper->setRootPath($configHelper['root_path']);
-            }
-            if (isset($configHelper['sizes'])) {
-                $helper->setSizes($configHelper['sizes']);
-            }
-        }
-
-        return $helper;
+        return new AssetSrcSet(
+            $config->string('view_helper_config.assetsrcset.root_path')
+            ?? $config->stringOr('asset.public_path', './public'),
+            $config->sizeSets('view_helper_config.assetsrcset.sizes'),
+        );
     }
 }

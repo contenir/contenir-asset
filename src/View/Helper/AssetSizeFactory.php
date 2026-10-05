@@ -4,15 +4,25 @@ declare(strict_types=1);
 
 namespace Contenir\Asset\View\Helper;
 
+use Contenir\Asset\Container\AssetConfig;
+use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 
-class AssetSizeFactory
+/**
+ * @api
+ */
+final readonly class AssetSizeFactory
 {
+    /**
+     * @throws ContainerExceptionInterface
+     */
     public function __invoke(ContainerInterface $container): AssetSize
     {
-        $config     = $container->has('config') ? $container->get('config') : [];
-        $publicPath = (string) ($config['asset']['cache']['public_path'] ?? './public');
+        $config = AssetConfig::from($container);
 
-        return new AssetSize($publicPath);
+        return new AssetSize(
+            $config->string('asset.public_path')
+            ?? $config->stringOr('asset.cache.public_path', './public'),
+        );
     }
 }

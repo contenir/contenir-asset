@@ -1,259 +1,216 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Contenir\Asset;
 
+use Contenir\Asset\Exception\RuntimeException;
+use Contenir\Asset\Model\AssetLinker;
 use Contenir\Asset\Model\Entity\BaseAssetEntity;
-use Contenir\Asset\Model\Repository\BaseAssetRepository;
-use RuntimeException;
+use Contenir\Asset\Storage\AssetSource;
+use Contenir\Asset\Storage\AssetStorage;
+use Contenir\Asset\Storage\SafeFilename;
+use Contenir\Db\Model\EntityManager;
+use Laminas\Permissions\Acl\Resource\ResourceInterface;
+use Override;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
+use Throwable;
+
+use function array_values;
+use function pathinfo;
+
+use const PATHINFO_FILENAME;
 
 /**
- * The AuthManager service is responsible for user's login/logout and simple access
- * filtering. The access filtering feature checks whether the current visitor
- * is allowed to see the given page or not.
+ * Creates, stores, updates and removes assets: rows through the entity
+ * manager, files through {@see AssetStorage}. Every write runs in a
+ * transaction.
+ *
+ * @api
  */
-class AssetManager implements AssetManagerInterface
+final readonly class AssetManager implements AssetManagerInterface
 {
-    public const DOCUMENT_TYPE_IMAGE    = 'image';
-    public const DOCUMENT_TYPE_DOCUMENT = 'document';
+    public const string DOCUMENT_TYPE_IMAGE    = 'image';
+    public const string DOCUMENT_TYPE_DOCUMENT = 'document';
 
     /**
-     * User Repository
-     * @var \Application\Repository\AssetRepository
-     */
-    private $assetRepository;
-
-    /**
-     * Constructs the service.
+     * @param class-string<BaseAssetEntity> $assetClass the application's asset entity
      */
     public function __construct(
-        BaseAssetRepository $assetRepository
-    ) {
-        $this->assetRepository = $assetRepository;
-    }
+        private EntityManager $em,
+        private string $assetClass,
+        private AssetStorage $storage,
+        private AssetLinker $linker,
+        private LoggerInterface $logger = new NullLogger(),
+    ) {}
 
-    public function findOneById($assetId)
-    {
-        return $this->assetRepository->findOne([
-            'asset_id' => $assetId
-        ]);
-    }
-
-    public function findByType($typeId)
-    {
-        return $this->assetRepository->find([
-            'type' => $typeId
-        ]);
-    }
-
-    protected function getAssetPath(
-        ResourceInterface $targetEntity,
-        $type = self::DOCUMENT_TYPE_IMAGE
-    ) {
-        $folderName = 'asset';
-        if ($targetEntity) {
-            $folderName = sprintf(
-                '%s-%s',
-                $targetEntity->getResourceId(),
-                join('-', $targetEntity->getPrimaryKeys())
-            );
-        }
-
-        $assetPath = sprintf(
-            '/asset/user/%s/%s',
-            $folderName,
-            $type
-        );
-
-        if (! file_exists('./public' . $assetPath)) {
-            $result = mkdir('./public' . $assetPath, 0777, true);
-            if (! $result) {
-                throw new RuntimeException(sprintf(
-                    'Cannot write to target path %s',
-                    $assetPath
-                ));
-            }
-        }
-
-        return $assetPath;
-    }
-
-    public function sequenceAsset($data = [])
-    {
-        $this->commitTransaction(function () use ($data) {
-            foreach ($data as $index => $assetId) {
-                $this->updateLookup('asset', [
-                    'sequence' => $index + 1
-                ], [
-                    'asset_id' => $assetId
-                ]);
-            }
-        });
-
-        return true;
-    }
-
+    /**
+     * Create and save an asset linked to $target and, optionally, to the
+     * uploading user and a parent record (their key columns are copied
+     * onto matching asset columns). The asset entity class must be
+     * constructible without arguments.
+     *
+     * @throws Throwable
+     *
+     * @mago-expect analysis:unsafe-instantiation Asset entities are documented as argument-less constructible.
+     */
     public function addAsset(
-        ResourceInterface $targetEntity,
-        UserEntity $userEntity,
-        AbstractEntity $parentEntity = null,
-        $type = AssetManager::DOCUMENT_TYPE_IMAGE
-    ) {
-        $asset = $this->assetRepository->create();
-        $asset->populate([
-            'type' => $type
-        ]);
-
-        if ($targetEntity) {
-            foreach ($targetEntity->getPrimaryKeys() as $key => $value) {
-                $asset->{$key} = $value;
-            }
-        }
-
-        if ($userEntity) {
-            $asset->user_id = $userEntity->user_id;
-        }
-
-        if ($parentEntity) {
-            foreach ($parentEntity->getPrimaryKeys() as $key => $value) {
-                $asset->{$key} = $value;
-            }
-        }
-
-        $this->assetRepository->save($asset);
-
-        return $asset;
-    }
-
-    public function updateAsset(
-        BaseAssetEntity $asset,
-        UserEntity $user = null,
-        array $values = [],
-        array $data = []
-    ) {
-        $asset->populate($values);
-
-        $this->saveAsset(
-            $asset,
-            $data
-        );
-
-        $this->getLogger()->notice(sprintf(
-            'Updated artwork data'
-        ), [
-            'user_id'  => $user->user_id ?? null,
-            'entry_id' => $asset->entry_id ?? null
-        ]);
-    }
-
-    public function saveAsset(BaseAssetEntity $asset)
-    {
-        $this->commitTransaction(function () use ($asset) {
-            $this->assetRepository->save($asset);
-        });
-    }
-
-    public function deleteAsset(BaseAssetEntity $asset)
-    {
-        $this->commitTransaction(function () use ($asset) {
-            $this->assetRepository->delete([
-                'asset_id' => $asset->asset_id
-            ]);
-        });
-    }
-
-    public function storeAsset(
-        BaseAssetEntity $asset,
-        ResourceInterface $targetEntity,
-        $type,
-        $srcPath,
-        $constraints = null
-    ) {
-        if (is_array($srcPath)) {
-            $srcFilename = $srcPath['name'];
-            $srcPath     = $srcPath['tmp_name'];
-        } else {
-            $srcFilename = basename($srcPath);
-        }
-
-        $srcPathParts = pathinfo($srcFilename);
-
-        $filePath = $this->getAssetPath($targetEntity, $type);
-        $fileName = $this->getSafeFilename($srcPathParts['filename']);
-
-        $ext = $srcPathParts['extension'] ?? null;
-
-        if (! $asset->title) {
-            $asset->title = $this->getSafeFilename($srcFilename);
-        }
-        $asset->path      = sprintf('%s/%s.%s', $filePath, $fileName, $ext);
-        $asset->mime_type = mime_content_type($srcPath);
-        $asset->active    = 'active';
-
-        $result = @copy($srcPath, './public' . $asset->path);
-        if ($result === false) {
-            $errorInfo = error_get_last();
-            throw new RuntimeException(sprintf('Cannot copy file - %s', $errorInfo['message']));
-        }
-
-        $convertExec = "convert";
-
-        if ($convertExec) {
-            $asset->image_lg  = sprintf('%s/%s-lg.%s', $filePath, $fileName, 'jpg');
-            $asset->thumbnail = sprintf('%s/%s-sm.%s', $filePath, $fileName, 'jpg');
-
-            if (! file_exists('./public' . $filePath)) {
-                $result = mkdir('./public' . $filePath, 0777, true);
-                if (! $result) {
-                    throw new RuntimeException(sprintf(
-                        'Cannot write to target path %s',
-                        $filePath
-                    ));
-                }
+        ResourceInterface $target,
+        ?object $user = null,
+        ?object $parent = null,
+        string $type = self::DOCUMENT_TYPE_IMAGE,
+    ): BaseAssetEntity {
+        $asset       = new $this->assetClass();
+        $asset->type = $type;
+        foreach ([$target, $user, $parent] as $owner) {
+            if (null === $owner) {
+                continue;
             }
 
-            if ($constraints) {
-                exec($convertExec . ' "' . realpath('./public') . $asset->path . '"[0] -colorspace sRGB -strip -resize ' . $constraints . '^ -gravity center -extent ' . $constraints . ' -unsharp 0x0.75 -quality 85% "' . realpath('./public') . $asset->image_lg . '"');
-            } else {
-                exec($convertExec . ' "' . realpath('./public') . $asset->path . '"[0] -colorspace sRGB -strip -resize 2000x2000 -unsharp 0x0.75 -quality 85% "' . realpath('./public') . $asset->image_lg . '"');
-            }
-
-            exec($convertExec . ' "' . realpath('./public') . $asset->image_lg . '"[0] -colorspace sRGB -strip -resize \'540x540^>\' -gravity center -unsharp 0x0.75 -crop 540x540+0+0 "' . realpath('./public') . $asset->thumbnail . '"');
+            $this->linker->link($asset, $owner);
         }
 
         $this->saveAsset($asset);
 
-        $this->getLogger()->notice(sprintf(
-            'Added new artwork to %s',
-            $filePath
-        ), [
-            'entry_id' => $asset->entry_id ?? null
+        return $asset;
+    }
+
+    /**
+     * Delete the asset's row. Its files are kept; call
+     * {@see self::removeAsset()} to delete them.
+     *
+     * @throws Throwable
+     */
+    public function deleteAsset(BaseAssetEntity $asset): void
+    {
+        $this->em->transactional(
+            /** @throws Throwable */
+            fn(): null => $this->em->delete($asset),
+        );
+    }
+
+    /**
+     * Assets of a type, in sequence order.
+     *
+     * @return list<BaseAssetEntity>
+     *
+     * @throws Throwable
+     */
+    #[Override]
+    public function findByType(string $type): array
+    {
+        return $this->em->getRepository($this->assetClass)->findBy(['type' => $type], [
+            'sequence' => 'ASC',
+            'assetId'  => 'ASC',
         ]);
+    }
+
+    /**
+     * @throws Throwable
+     */
+    #[Override]
+    public function findOneById(int|string $assetId): ?BaseAssetEntity
+    {
+        return $this->em->getRepository($this->assetClass)->find($assetId);
+    }
+
+    /**
+     * Delete the asset's files (original, large copy and thumbnail). The
+     * row is kept; call {@see self::deleteAsset()} to delete it.
+     *
+     * @throws RuntimeException When a file cannot be deleted.
+     */
+    public function removeAsset(BaseAssetEntity $asset): void
+    {
+        $this->storage->remove($asset->path, $asset->imageLg, $asset->thumbnail);
+        $this->logger->notice('Removed asset files', ['asset_id' => $asset->assetId, 'path' => $asset->path]);
+    }
+
+    /**
+     * @throws Throwable
+     */
+    public function saveAsset(BaseAssetEntity $asset): void
+    {
+        $this->em->transactional(
+            /** @throws Throwable */
+            fn(): null => $this->em->save($asset),
+        );
+    }
+
+    /**
+     * Set each asset's sequence to its position in $assetIds (from 1).
+     * Unknown ids are skipped.
+     *
+     * @param list<int|string> $assetIds
+     *
+     * @throws Throwable
+     */
+    public function sequenceAsset(array $assetIds): void
+    {
+        $this->em->transactional(
+            /** @throws Throwable */
+            function () use ($assetIds): void {
+                foreach (array_values($assetIds) as $index => $assetId) {
+                    $asset = $this->findOneById($assetId);
+                    if (null === $asset) {
+                        continue;
+                    }
+
+                    $asset->sequence = $index + 1;
+                    $this->em->save($asset);
+                }
+            },
+        );
+    }
+
+    /**
+     * Copy a file (a path or a PHP upload array) into the target's asset
+     * folder, generate image derivatives, record the paths on the asset
+     * and save it.
+     *
+     * @param string|array{name: string, tmp_name: string} $source
+     * @param string|null                                   $constraints "WIDTHxHEIGHT" to fill-and-crop the large copy
+     *
+     * @throws Throwable
+     */
+    public function storeAsset(
+        BaseAssetEntity $asset,
+        ResourceInterface $target,
+        string $type,
+        string|array $source,
+        ?string $constraints = null,
+    ): BaseAssetEntity {
+        $file   = AssetSource::from($source);
+        $stored = $this->storage->store($file, $this->linker->folderFor($target), $type, $constraints);
+
+        $asset->title     ??= SafeFilename::from(pathinfo($file->filename, PATHINFO_FILENAME));
+        $asset->path      = $stored->path;
+        $asset->mimeType  = $stored->mimeType;
+        $asset->active    = 'active';
+        $asset->imageLg   = $stored->imageLg;
+        $asset->thumbnail = $stored->thumbnail;
+        $this->saveAsset($asset);
+
+        $this->logger->notice('Stored asset file', ['asset_id' => $asset->assetId, 'path' => $stored->path]);
 
         return $asset;
     }
 
-    public function removeAsset(
-        BaseAssetEntity $asset,
-        UserEntity $user = null
-    ) {
-        if ($asset->path) {
-            @unlink('./public' . $asset->path);
-        }
-
-        if ($asset->image_lg) {
-            @unlink('./public' . $asset->image_lg);
-        }
-
-        if ($asset->thumbnail) {
-            @unlink('./public' . $asset->thumbnail);
-        }
-
-        $this->getLogger()->notice(sprintf(
-            'Removed artwork from %s',
-            $asset->path
-        ), [
-            'user_id'  => $user->user_id ?? null,
-            'entry_id' => $asset->entry_id ?? null
+    /**
+     * Assign property values (by property name) and save.
+     *
+     * @param array<string, mixed> $values
+     *
+     * @throws Throwable
+     */
+    public function updateAsset(BaseAssetEntity $asset, ?object $user = null, array $values = []): void
+    {
+        $this->linker->assign($asset, $values);
+        $this->saveAsset($asset);
+        $this->logger->notice('Updated asset', [
+            'asset_id' => $asset->assetId,
+            'user'     => null === $user ? null : $user::class,
         ]);
     }
 }
