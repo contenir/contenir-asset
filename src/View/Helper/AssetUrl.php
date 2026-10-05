@@ -1,16 +1,26 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Contenir\Asset\View\Helper;
 
-use Laminas\View\Helper\ServerUrl;
-
-class AssetUrl extends ServerUrl
+/**
+ * Absolute URLs for assets: the configured CDN host ("asset.cdn.host"),
+ * or the current request's host, with the current request's scheme.
+ *
+ *     <?= $this->assetUrl($asset->path) ?>   // https://cdn.example.com/asset/user/...
+ *
+ * @api
+ */
+final readonly class AssetUrl
 {
-    protected $scheme;
-    protected $host;
+    public function __construct(
+        private string $scheme,
+        private string $host,
+    ) {}
 
-    public function __construct($options)
+    public function __invoke(string $path = ''): string
     {
-        $this->host = $options['host'] ?? null;
+        return "{$this->scheme}://{$this->host}{$path}";
     }
 }

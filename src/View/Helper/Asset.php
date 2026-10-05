@@ -1,21 +1,29 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Contenir\Asset\View\Helper;
 
 use Contenir\Asset\AssetManagerInterface;
-use Laminas\View\Helper\AbstractHelper;
+use Contenir\Asset\Model\Entity\BaseAssetEntity;
+use Throwable;
 
-class Asset extends AbstractHelper
+/**
+ * Loads an asset by id in templates: `$this->asset($id)?->path`.
+ *
+ * @api
+ */
+final class Asset
 {
-    protected $assetManager;
+    public function __construct(
+        private readonly AssetManagerInterface $assetManager,
+    ) {}
 
-    public function __construct(AssetManagerInterface $assetManager = null)
+    /**
+     * @throws Throwable
+     */
+    public function __invoke(int|string|null $assetId): ?BaseAssetEntity
     {
-        $this->assetManager = $assetManager;
-    }
-
-    public function __invoke($assetId)
-    {
-        return $this->assetManager->findOneById($assetId);
+        return null === $assetId || '' === $assetId ? null : $this->assetManager->findOneById($assetId);
     }
 }
