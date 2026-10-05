@@ -21,7 +21,7 @@
         "contenir/contenir-db-model": "^2.0@RC",
         "laminas/laminas-escaper": "^2.13",
         "laminas/laminas-http": "^2.19",
-        "laminas/laminas-mvc": "^3.7",
+        "laminas/laminas-mvc": "^3.8",
         "laminas/laminas-permissions-acl": "^2.16",
         "laminas/laminas-router": "^3.13",
         "laminas/laminas-servicemanager": "^3.22 || ^4.0",
