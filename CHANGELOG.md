@@ -1,6 +1,6 @@
 # Changelog
 
-## [2.0.0] - Unreleased
+## [2.0.0] - 2025-11-05
 
 Requires PHP 8.3+ and contenir/contenir-db-model 2.x. See
 [UPGRADE-2.0.md](UPGRADE-2.0.md).
