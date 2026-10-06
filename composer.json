@@ -12,7 +12,7 @@
     ],
     "homepage": "https://contenir.com.au",
     "support": {
-        "docs": "https://docs.contenir.com.au/contenir-asset/",
+        "docs": "https://github.com/contenir/contenir-asset/tree/main/docs",
         "issues": "https://github.com/contenir/contenir-asset/issues",
         "source": "https://github.com/contenir/contenir-asset"
     },
