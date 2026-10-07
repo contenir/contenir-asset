@@ -31,6 +31,7 @@
     },
     "require-dev": {
         "contenir/contenir-qa-tools": "0.1.x-dev",
+        "infection/infection": "^0.34.1",
         "php-db/phpdb-sqlite": "^0.2.0",
         "phpunit/phpunit": "^11.5.42"
     },
@@ -53,7 +54,10 @@
         "platform": {
             "php": "8.3.99"
         },
-        "sort-packages": true
+        "sort-packages": true,
+        "allow-plugins": {
+            "infection/extension-installer": true
+        }
     },
     "extra": {
         "laminas": {
@@ -78,6 +82,7 @@
         "static-analysis": "mago analyze",
         "test": "phpunit --colors=always --testsuite unit",
         "test-coverage": "phpunit --colors=always --coverage-clover clover.xml",
-        "test-integration": "phpunit --colors=always --testsuite integration"
+        "test-integration": "phpunit --colors=always --testsuite integration",
+        "mutation-test": "infection"
     }
 }
