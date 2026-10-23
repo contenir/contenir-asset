@@ -1,12 +1,12 @@
 {
     "name": "contenir/contenir-asset",
-    "description": "Asset records, storage and image derivatives for laminas-mvc, on contenir-db-model",
+    "description": "Asset records, storage, image derivatives and view helpers for laminas-mvc and Mezzio, on contenir-db-model",
     "license": "BSD-3-Clause",
     "type": "library",
     "keywords": [
         "contenir",
         "laminas",
-        "mvc",
+        "mezzio",
         "asset",
         "image"
     ],
@@ -20,10 +20,7 @@
         "php": "~8.3.0 || ~8.4.0 || ~8.5.0",
         "contenir/contenir-db-model": "^2.0@RC",
         "laminas/laminas-escaper": "^2.13",
-        "laminas/laminas-http": "^2.19",
-        "laminas/laminas-mvc": "^3.8",
         "laminas/laminas-permissions-acl": "^2.16",
-        "laminas/laminas-router": "^3.13",
         "laminas/laminas-servicemanager": "^3.22 || ^4.0",
         "laminas/laminas-view": "^2.35",
         "psr/container": "^1.1 || ^2.0",
@@ -61,7 +58,8 @@
     },
     "extra": {
         "laminas": {
-            "component": "Contenir\\Asset"
+            "component": "Contenir\\Asset",
+            "config-provider": "Contenir\\Asset\\ConfigProvider"
         }
     },
     "scripts": {

@@ -1,6 +1,6 @@
 # contenir-asset
 
-> Asset records, file storage, ImageMagick derivatives and view helpers for laminas-mvc, on contenir/contenir-db-model 2.x. PHP 8.3+. Version 2.x is not compatible with 1.x.
+> Asset records, file storage, ImageMagick derivatives and view helpers for laminas-mvc and Mezzio, on contenir/contenir-db-model 2.x. PHP 8.3+. Version 2.x is not compatible with 1.x. The legacy resize route comes from contenir/contenir-asset-laminas-mvc or contenir/contenir-asset-mezzio.
 
 Key facts for code generation:
 

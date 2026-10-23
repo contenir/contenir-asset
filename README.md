@@ -1,8 +1,13 @@
 # contenir-asset
 
 Asset records, file storage, image derivatives and view helpers for
-laminas-mvc applications, built on
+laminas-mvc and Mezzio applications, built on
 [contenir-db-model](https://github.com/contenir/contenir-db-model) 2.x.
+The package itself needs no framework: it registers through a
+`ConfigProvider` (Mezzio) or `Module` (laminas-mvc), and the resize route
+for the legacy `.WxH` scheme comes from the matching adapter,
+[contenir-asset-laminas-mvc](https://github.com/contenir/contenir-asset-laminas-mvc)
+or [contenir-asset-mezzio](https://github.com/contenir/contenir-asset-mezzio).
 
 - **`AssetManager`.** Create, store, update, sequence and delete asset
   records and their files.
@@ -20,7 +25,7 @@ laminas-mvc applications, built on
 
 - PHP 8.3, 8.4 or 8.5
 - `contenir/contenir-db-model` 2.x and a `php-db/phpdb` platform package
-- laminas-mvc 3.7+
+- laminas-view 2 (which Mezzio's laminas-view renderer and laminas-mvc both bring)
 - ImageMagick (`convert`) for image derivatives
 - `ext-intl` (recommended) for transliterating accented file names
 
@@ -32,7 +37,11 @@ composer require contenir/contenir-asset:^2.0@RC
 
 The consuming project needs `"minimum-stability": "dev"` and
 `"prefer-stable": true` until php-db/phpdb 0.6.0 is tagged. With the
-laminas component installer, the `Contenir\Asset` module registers itself.
+laminas component installer the package registers itself: as the
+`Contenir\Asset` module in laminas-mvc, as `Contenir\Asset\ConfigProvider`
+in Mezzio. Add the adapter for your framework to get the legacy resize
+route: `contenir/contenir-asset-laminas-mvc` or
+`contenir/contenir-asset-mezzio`.
 
 ## At a glance
 

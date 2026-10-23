@@ -22,7 +22,13 @@ Requires PHP 8.3+ and contenir/contenir-db-model 2.x. See
 ### Changed
 
 - **Helpers** are plain invokables, escaping through laminas-escaper.
-- **`AssetUrl`** reads scheme and host from the MVC request.
+- **`AssetUrl`** reads scheme and host from the server variables of the
+  request PHP is serving, so it needs no framework's request object.
+- **No framework dependency.** laminas-mvc, laminas-router and laminas-http
+  are no longer required. `ConfigProvider` carries the wiring; `Module`
+  hands it to laminas-mvc. The legacy `.WxH` resize route moved to the
+  framework adapters, over the new `Image\LegacyResizer` service that
+  does the resizing for both.
 - **The legacy resizer** returns `Response` objects instead of calling
   `exit`.
 
@@ -31,9 +37,8 @@ Requires PHP 8.3+ and contenir/contenir-db-model 2.x. See
 - **Path traversal:** the legacy resizer no longer serves or writes files
   outside `public/asset` (`../` in the URL).
 - **Shell commands:** ImageMagick commands escape every argument.
-- **Undeclared dependencies:** `laminas-view`, `laminas-permissions-acl`,
-  `laminas-escaper`, `laminas-http` and `laminas-router` are now required
-  explicitly.
+- **Undeclared dependencies:** `laminas-view`, `laminas-permissions-acl`
+  and `laminas-escaper` are now required explicitly.
 
 ### Removed
 
