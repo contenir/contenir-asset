@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace Contenir\Asset;
 
-use Laminas\Router\Http\Regex;
-
 /**
- * laminas-mvc module: asset configuration defaults, the AssetManager
- * service, the asset view helpers and the legacy image resize route.
+ * laminas-mvc module: the {@see ConfigProvider} wiring with its services
+ * under `service_manager`, where laminas-mvc reads them.
  *
  * @api
  */
@@ -19,72 +17,13 @@ final readonly class Module
      */
     public function getConfig(): array
     {
+        $provider = new ConfigProvider();
+
         return [
-            'asset'              => [
-                'entity'            => null,
-                'asset_manager'     => AssetManager::class,
-                'public_path'       => './public',
-                'storage_directory' => '/asset/user',
-                'convert'           => 'convert',
-                'logger'            => null,
-                'cdn'               => ['host' => null],
-                'srcset'            => ['helper' => '/usr/local/bin/convert'],
-            ],
-            'router'             => [
-                'routes' => [
-                    'imageresize' => [
-                        'type'    => Regex::class,
-                        'options' => [
-                            'regex'    => '/asset/(?<folder>[a-zA-Z0-9_\-\/\%\.]+).*/\.(?<dimensions>[\d\.]+x[\d\.]*)/(?<filename>.*)',
-                            'defaults' => [
-                                'controller' => Controller\ImageResizeController::class,
-                                'action'     => 'resize',
-                            ],
-                            'spec'     => '/asset/%folder%/.%dimensions%/%filename%',
-                        ],
-                    ],
-                ],
-            ],
-            'controllers'        => [
-                'factories' => [
-                    Controller\ImageResizeController::class => Controller\ImageResizeControllerFactory::class,
-                ],
-            ],
-            'service_manager'    => [
-                'factories' => [
-                    AssetManager::class => AssetManagerFactory::class,
-                ],
-            ],
-            'view_helpers'       => [
-                'aliases'   => [
-                    'asset'       => View\Helper\Asset::class,
-                    'Asset'       => View\Helper\Asset::class,
-                    'assetAspect' => View\Helper\AssetAspect::class,
-                    'AssetAspect' => View\Helper\AssetAspect::class,
-                    'assetSize'   => View\Helper\AssetSize::class,
-                    'AssetSize'   => View\Helper\AssetSize::class,
-                    'assetSizes'  => View\Helper\AssetSizes::class,
-                    'AssetSizes'  => View\Helper\AssetSizes::class,
-                    'assetSrcset' => View\Helper\AssetSrcSet::class,
-                    'assetSrcSet' => View\Helper\AssetSrcSet::class,
-                    'AssetSrcset' => View\Helper\AssetSrcSet::class,
-                    'AssetSrcSet' => View\Helper\AssetSrcSet::class,
-                    'assetUrl'    => View\Helper\AssetUrl::class,
-                    'AssetUrl'    => View\Helper\AssetUrl::class,
-                ],
-                'factories' => [
-                    View\Helper\Asset::class       => View\Helper\AssetFactory::class,
-                    View\Helper\AssetAspect::class => View\Helper\AssetAspectFactory::class,
-                    View\Helper\AssetSize::class   => View\Helper\AssetSizeFactory::class,
-                    View\Helper\AssetSizes::class  => View\Helper\AssetSizesFactory::class,
-                    View\Helper\AssetSrcSet::class => View\Helper\AssetSrcSetFactory::class,
-                    View\Helper\AssetUrl::class    => View\Helper\AssetUrlFactory::class,
-                ],
-            ],
-            'view_helper_config' => [
-                'assetsrcset' => ['sizes' => []],
-                'assetsizes'  => ['sizes' => []],
-            ],
+            'asset'              => $provider->getAssetDefaults(),
+            'service_manager'    => $provider->getDependencies(),
+            'view_helpers'       => $provider->getViewHelperConfig(),
+            'view_helper_config' => $provider->getViewHelperDefaults(),
         ];
     }
 }

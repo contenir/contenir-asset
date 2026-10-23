@@ -59,7 +59,8 @@ final class Asset extends BaseAssetEntity
 | `BaseAssetEntity::class => InvokableFactory::class` | Remove |
 | `asset.cache.public_path` (helpers) | `asset.public_path`; the old key is still read as a fallback |
 | — | New: `asset.storage_directory`, `asset.convert`, `asset.logger`, `asset.cdn.host` |
-| Route default action `index` | `resize` (only matters if you override the route) |
+| `imageresize` route and `ImageResizeController` in this package | Supplied by the framework adapter: `contenir/contenir-asset-laminas-mvc` (route `imageresize`, action `resize`) or `contenir/contenir-asset-mezzio` (`ImageResizeHandler`), both over `Image\LegacyResizer` |
+| `Contenir\Asset` module only | `Module` for laminas-mvc, `ConfigProvider` for Mezzio; neither needs laminas-mvc |
 
 ## 3. AssetManager
 

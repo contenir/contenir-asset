@@ -1,7 +1,8 @@
 # Configuration
 
-All options live under the `asset` key. Defaults come from the module's
-`getConfig()`.
+All options live under the `asset` key. Defaults come from
+`ConfigProvider::getAssetDefaults()`, which `Module::getConfig()` also
+returns for laminas-mvc.
 
 ```php
 return [

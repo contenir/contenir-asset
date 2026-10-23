@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Contenir\Asset\Controller;
+namespace Contenir\Asset\Image;
 
 use Contenir\Asset\Exception\RuntimeException;
 use Contenir\Asset\Storage\Filesystem;
